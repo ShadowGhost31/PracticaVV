@@ -1,0 +1,17 @@
+version: "3.9"
+services:
+  db:
+    image: postgres:16
+    container_name: city_events_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: city_events
+    ports:
+      - "5432:5432"
+    volumes:
+      - city_events_pg:/var/lib/postgresql/data
+
+volumes:
+  city_events_pg:

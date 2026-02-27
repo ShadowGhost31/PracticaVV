@@ -1,0 +1,101 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  ORGANIZER
+  ADMIN
+}
+
+enum OrderStatus {
+  CREATED
+  PENDING_PAYMENT
+  PAID
+  CANCELED
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  name         String?
+  passwordHash String
+  role         Role     @default(USER)
+  createdAt    DateTime @default(now())
+
+  events       Event[]  @relation("OrganizerEvents")
+  reviews      Review[]
+  orders       Order[]
+}
+
+model Event {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  city        String
+  location    String
+  category    String
+  imageUrl    String?
+  startAt     DateTime
+  endAt       DateTime?
+  createdAt   DateTime @default(now())
+
+  organizerId String
+  organizer   User     @relation("OrganizerEvents", fields: [organizerId], references: [id])
+
+  ticketTypes TicketType[]
+  reviews     Review[]
+}
+
+model TicketType {
+  id            String   @id @default(cuid())
+  eventId       String
+  name          String
+  price         Int      // у копійках
+  quantityTotal Int
+  quantitySold  Int      @default(0)
+
+  event         Event    @relation(fields: [eventId], references: [id])
+  orderItems    OrderItem[]
+}
+
+model Order {
+  id        String      @id @default(cuid())
+  userId    String
+  status    OrderStatus @default(CREATED)
+  total     Int         @default(0)
+  createdAt DateTime    @default(now())
+
+  user      User        @relation(fields: [userId], references: [id])
+  items     OrderItem[]
+}
+
+model OrderItem {
+  id           String @id @default(cuid())
+  orderId      String
+  ticketTypeId String
+  quantity     Int
+  unitPrice    Int
+
+  order        Order      @relation(fields: [orderId], references: [id])
+  ticketType   TicketType @relation(fields: [ticketTypeId], references: [id])
+}
+
+model Review {
+  id        String   @id @default(cuid())
+  eventId   String
+  userId    String
+  rating    Int
+  text      String
+  createdAt DateTime @default(now())
+
+  event     Event    @relation(fields: [eventId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@unique([eventId, userId])
+}
